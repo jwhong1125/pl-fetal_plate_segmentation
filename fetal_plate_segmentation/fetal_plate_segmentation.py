@@ -1,4 +1,4 @@
-#!/usr/bin/env python                                            
+#!/usr/bin/env python
 #
 # fetal_plate_segmentation ds ChRIS plugin app
 #
@@ -12,35 +12,40 @@
 
 import os
 import sys
-sys.path.append(os.path.dirname(__file__))
+import numpy as np
+import glob, tempfile
 
+sys.path.append(os.path.dirname(__file__))
+from deep_util_JW_predict import *
 # import the Chris app superclass
 from chrisapp.base import ChrisApp
 
 
 Gstr_title = """
 
-Generate a title from 
-http://patorjk.com/software/taag/#p=display&f=Doom&t=fetal_plate_segmentation
+  __     _        _           _       _                                             _        _   _             
+ / _|   | |      | |         | |     | |                                           | |      | | (_)            
+| |_ ___| |_ __ _| |    _ __ | | __ _| |_ ___   ___  ___  __ _ _ __ ___   ___ _ __ | |_ __ _| |_ _  ___  _ __  
+|  _/ _ \ __/ _` | |   | '_ \| |/ _` | __/ _ \ / __|/ _ \/ _` | '_ ` _ \ / _ \ '_ \| __/ _` | __| |/ _ \| '_ \ 
+| ||  __/ || (_| | |   | |_) | | (_| | ||  __/ \__ \  __/ (_| | | | | | |  __/ | | | || (_| | |_| | (_) | | | |
+|_| \___|\__\__,_|_|   | .__/|_|\__,_|\__\___| |___/\___|\__, |_| |_| |_|\___|_| |_|\__\__,_|\__|_|\___/|_| |_|
+                 ______| |                 ______         __/ |                                                
+                |______|_|                |______|       |___/                                                 
 
 """
 
 Gstr_synopsis = """
 
-(Edit this in-line help for app specifics. At a minimum, the 
-flags below are supported -- in the case of DS apps, both
-positional arguments <inputDir> and <outputDir>; for FS apps
-only <outputDir> -- and similarly for <in> <out> directories
-where necessary.)
-
     NAME
 
-       fetal_plate_segmentation.py 
+       fetal_plate_segmentation.py
 
     SYNOPSIS
 
         python fetal_plate_segmentation.py                                         \\
             [-h] [--help]                                               \\
+            [-td] [--tempdir]                                           \\
+            [-vd] [--verifydir]                                         \\
             [--json]                                                    \\
             [--man]                                                     \\
             [--meta]                                                    \\
@@ -48,7 +53,7 @@ where necessary.)
             [-v <level>] [--verbosity <level>]                          \\
             [--version]                                                 \\
             <inputDir>                                                  \\
-            <outputDir> 
+            <outputDir>
 
     BRIEF EXAMPLE
 
@@ -56,34 +61,42 @@ where necessary.)
 
             mkdir in out && chmod 777 out
             python fetal_plate_segmentation.py   \\
-                                in    out
+                                inputdir    outputdir
 
     DESCRIPTION
 
-        `fetal_plate_segmentation.py` ...
+        `fetal_plate_segmentation.py` basically does a segment left / right
+        fetal cortical plate, and inner region of the cortical plate. 
+        This script part of the automatic fetal brain process pipeline at BCH.
 
     ARGS
 
         [-h] [--help]
         If specified, show help message and exit.
-        
+
+        [-td] [--tempdir]
+        If specified, intermediate result saved at tempdir.
+
+        [-vd] [--verifydir]
+        If specified, segmentation result verify image saved at verifydir.
+
         [--json]
         If specified, show json representation of app and exit.
-        
+
         [--man]
         If specified, print (this) man page and exit.
 
         [--meta]
         If specified, print plugin meta data and exit.
-        
-        [--savejson <DIR>] 
-        If specified, save json representation file to DIR and exit. 
-        
+
+        [--savejson <DIR>]
+        If specified, save json representation file to DIR and exit.
+
         [-v <level>] [--verbosity <level>]
         Verbosity level for app. Not used currently.
-        
+
         [--version]
-        If specified, print version number and exit. 
+        If specified, print version number and exit.
 
 """
 
@@ -131,6 +144,20 @@ class Fetal_plate_segmentation(ChrisApp):
         Define the CLI arguments accepted by this plugin app.
         Use self.add_argument to specify a new app argument.
         """
+        self.add_argument('-td', '--tempdir',
+                           action       = 'store',
+                           dest         = 'tempdir', 
+                           type         = str, 
+                           optional     = True,
+                           help         = 'temporay directory path set',
+                           default      = '')
+        self.add_argument('-vd', '--verifydir',
+                           action       = 'store',
+                           dest         = 'verifydir', 
+                           type         = str, 
+                           optional     = True,
+                           help         = 'verify directory path set',
+                           default      = '')
 
     def run(self, options):
         """
@@ -138,6 +165,67 @@ class Fetal_plate_segmentation(ChrisApp):
         """
         print(Gstr_title)
         print('Version: %s' % self.get_version())
+        # Image list making
+        img_list = np.asarray(sorted(glob.glob(options.inputdir+'/Recon_final_nuc.nii')))
+        mask = self.SELFPATH+'/mask31_D10.nii.gz'
+        # tempdir set
+        if options.tempdir == '':
+            tempdir = tempfile.mkdtemp()
+        else:
+            tempdir = options.tempdir
+        if options.verifydir == '':
+            verifydir = tempfile.mkdtemp()
+        else:
+            verifydir = options.verifydir
+
+        # Image process # axi
+        test_dic, _ = make_dic(img_list, img_list, mask, 'axi', 0)
+        model = Unet_network([128,128,1],5, style='basic', ite=3, depth=4).build()
+        model.load_weights(self.SELFPATH+'/axi.h5')
+
+        tmask = model.predict(test_dic)
+        make_result(tmask,img_list,mask,tempdir+'/','axi')
+        tmask = model.predict(test_dic[:,::-1,:,:])
+        make_result(tmask[:,::-1,:,:],img_list,mask,tempdir+'/','axi','f1')
+        tmask = model.predict(axfliper(test_dic))
+        make_result(axfliper(tmask,1),img_list,mask,tempdir+'/','axi','f2')
+        tmask = model.predict(axfliper(test_dic[:,::-1,:,:]))
+        make_result(axfliper(tmask[:,::-1,:,:],1),img_list,mask,tempdir+'/','axi','f3')
+
+        del model, tmask, test_dic
+        reset_graph()
+        # Image process # cor
+        test_dic, _ =make_dic(img_list, img_list, mask, 'cor', 0)
+        model = Unet_network([128,128,1], 5, style='basic',ite=3, depth=4).build()
+        model.load_weights(self.SELFPATH+'/cor.h5')
+
+        tmask = model.predict(test_dic)
+        make_result(tmask,img_list,mask,tempdir+'/','cor')
+        tmask = model.predict(test_dic[:,:,::-1,:])
+        make_result(tmask[:,:,::-1,:],img_list,mask,tempdir+'/','cor','f1')
+        tmask = model.predict(cofliper(test_dic))
+        make_result(cofliper(tmask,1),img_list,mask,tempdir+'/','cor','f2')
+        tmask = model.predict(cofliper(test_dic[:,:,::-1,:]))
+        make_result(cofliper(tmask[:,:,::-1,:],1),img_list,mask,tempdir+'/','cor','f3')
+
+        del model, tmask, test_dic
+        reset_graph()
+        # Image process # sag
+        test_dic, _ =make_dic(img_list, img_list, mask, 'sag', 0)
+        model = Unet_network([128,128,1], 3, style='basic', ite=3, depth=4).build()
+        model.load_weights(self.SELFPATH+'/sag.h5')
+
+        tmask = model.predict(test_dic)
+        make_result(tmask,img_list,mask,tempdir+'/','sag')
+        tmask = model.predict(test_dic[:,::-1,:,:])
+        make_result(tmask[:,::-1,:,:],img_list,mask,tempdir+'/','sag','f1')
+        tmask = model.predict(test_dic[:,:,::-1,:])
+        make_result(tmask[:,:,::-1,:],img_list,mask,tempdir+'/','sag','f2')
+
+        del model, tmask, test_dic
+        reset_graph()
+        make_sum(tempdir+'/*axi*', tempdir+'/*cor*',tempdir+'/*sag*', img_list[0], options.outputdir+'/')
+        make_verify(options.inputdir+'/', options.outputdir+'/', verifydir+'/')
 
     def show_man_page(self):
         """
@@ -150,3 +238,4 @@ class Fetal_plate_segmentation(ChrisApp):
 if __name__ == "__main__":
     chris_app = Fetal_plate_segmentation()
     chris_app.launch()
+

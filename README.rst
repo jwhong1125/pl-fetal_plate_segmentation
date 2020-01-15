@@ -16,7 +16,7 @@ pl-fetal_plate_segmentation
 Abstract
 --------
 
-An app to segment the cortical plate of fetal T2 MRI using deep leraning.
+A ChRIS app to segment the cortical plate of fetal T2 MRI using deep learning.
 
 
 Synopsis
@@ -24,35 +24,61 @@ Synopsis
 
 .. code::
 
-    python fetal_plate_segmentation.py                                           \
-        [-v <level>] [--verbosity <level>]                          \
-        [--version]                                                 \
-        [--man]                                                     \
-        [--meta]                                                    \
-        <inputDir>
-        <outputDir> 
+        python3 fetal_plate_segmentation.py                                         \\
+            [-h] [--help]                                               \\
+            [-td] [--tempdir]                                           \\
+            [-vd] [--verifydir]                                         \\
+            [--json]                                                    \\
+            [--man]                                                     \\
+            [--meta]                                                    \\
+            [--savejson <DIR>]                                          \\
+            [-v <level>] [--verbosity <level>]                          \\
+            [--version]                                                 \\
+            <inputDir>                                                  \\
+            <outputDir>
 
 Description
 -----------
 
-``fetal_plate_segmentation.py`` is a ChRIS-based application that...
+`fetal_plate_segmentation.py` basically does a segment left / right fetal cortical plate, and inner region of the cortical plate.
+
+This script part of the automatic fetal brain process pipeline at BCH.
+
+.. image:: README_image/verify.png
+  :width: 400
+  :alt: Sample result verify image
 
 Agruments
 ---------
 
 .. code::
 
-    [-v <level>] [--verbosity <level>]
-    Verbosity level for app. Not used currently.
+        [-h] [--help]
+        If specified, show help message and exit.
 
-    [--version]
-    If specified, print version number. 
-    
-    [--man]
-    If specified, print (this) man page.
+        [-td] [--tempdir]
+        If specified, intermediate result saved at tempdir.
 
-    [--meta]
-    If specified, print plugin meta data.
+        [-vd] [--verifydir]
+        If specified, segmentation result verify image saved at verifydir.
+
+        [--json]
+        If specified, show json representation of app and exit.
+
+        [--man]
+        If specified, print (this) man page and exit.
+
+        [--meta]
+        If specified, print plugin meta data and exit.
+
+        [--savejson <DIR>]
+        If specified, save json representation file to DIR and exit.
+
+        [-v <level>] [--verbosity <level>]
+        Verbosity level for app. Not used currently.
+
+        [--version]
+        If specified, print version number and exit.
 
 
 Run
@@ -61,9 +87,9 @@ Run
 This ``plugin`` can be run in two modes: natively as a python package or as a containerized docker image.
 
 Using PyPI
-~~~~~~~~~~
+~~~~~~~~~
 
-To run from PyPI, simply do a 
+To run from PyPI, simply do a
 
 .. code:: bash
 
@@ -83,11 +109,11 @@ to get inline help. The app should also understand being called with only two po
 
 
 Using ``docker run``
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 To run using ``docker``, be sure to assign an "input" directory to ``/incoming`` and an output directory to ``/outgoing``. *Make sure that the* ``$(pwd)/out`` *directory is world writable!*
 
-Now, prefix all calls with 
+Now, prefix all calls with
 
 .. code:: bash
 
@@ -103,11 +129,4 @@ Thus, getting inline help is:
             fnndsc/pl-fetal_plate_segmentation fetal_plate_segmentation.py                        \
             --man                                                       \
             /incoming /outgoing
-
-Examples
---------
-
-
-
-
 
