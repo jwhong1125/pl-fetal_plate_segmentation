@@ -44,10 +44,6 @@ Description
 
 This script part of the automatic fetal brain process pipeline at BCH.
 
-.. image:: README_image/verify.png
-  :width: 400
-  :alt: Sample result verify image
-
 Agruments
 ---------
 
@@ -118,7 +114,7 @@ Now, prefix all calls with
 .. code:: bash
 
     docker run --rm -v $(pwd)/out:/outgoing                             \
-            fnndsc/pl-fetal_plate_segmentation fetal_plate_segmentation.py                        \
+            jwhong1125/pl-fetal_plate_segmentation fetal_plate_segmentation.py                        \
 
 Thus, getting inline help is:
 
@@ -126,7 +122,7 @@ Thus, getting inline help is:
 
     mkdir in out && chmod 777 out
     docker run --rm -v $(pwd)/in:/incoming -v $(pwd)/out:/outgoing      \
-            fnndsc/pl-fetal_plate_segmentation fetal_plate_segmentation.py                        \
+            jwhong1125/pl-fetal_plate_segmentation fetal_plate_segmentation.py                        \
             --man                                                       \
             /incoming /outgoing
 
