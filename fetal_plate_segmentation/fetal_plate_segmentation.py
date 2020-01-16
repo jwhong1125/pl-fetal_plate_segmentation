@@ -173,10 +173,6 @@ class Fetal_plate_segmentation(ChrisApp):
             tempdir = tempfile.mkdtemp()
         else:
             tempdir = options.tempdir
-        if options.verifydir == '':
-            verifydir = tempfile.mkdtemp()
-        else:
-            verifydir = options.verifydir
 
         # Image process # axi
         test_dic, _ = make_dic(img_list, img_list, mask, 'axi', 0)
@@ -224,8 +220,13 @@ class Fetal_plate_segmentation(ChrisApp):
 
         del model, tmask, test_dic
         reset_graph()
+        
         make_sum(tempdir+'/*axi*', tempdir+'/*cor*',tempdir+'/*sag*', img_list[0], options.outputdir+'/')
-        make_verify(options.inputdir+'/', options.outputdir+'/', verifydir+'/')
+        os.system('rm -rf' +tempdir)
+        
+        if options.verifydir != '':
+            make_verify(options.inputdir+'/', options.outputdir+'/', options.verifydir+'/')
+        
 
     def show_man_page(self):
         """
