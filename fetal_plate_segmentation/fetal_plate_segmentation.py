@@ -222,7 +222,7 @@ class Fetal_plate_segmentation(ChrisApp):
         reset_graph()
         
         make_sum(tempdir+'/*axi*', tempdir+'/*cor*',tempdir+'/*sag*', img_list[0], options.outputdir+'/')
-        os.system('rm -rf' +tempdir)
+        os.system('rm -rf ' +tempdir)
         
         if options.verifydir != '':
             make_verify(options.inputdir+'/', options.outputdir+'/', options.verifydir+'/')
