@@ -28,7 +28,7 @@ setup(
       author_email     =   'Jinwoo.Hong@childrens.harvard.edu',
       url              =   'http://wiki',
       packages         =   ['fetal_plate_segmentation'],
-      install_requires =   ['chrisapp', 'pudb', 'tensorflow==1.5', 'keras==2.2.4', 'matplotlib'],
+      install_requires =   ['chrisapp', 'pudb', 'tensorflow==2.5.0', 'keras==2.2.4', 'matplotlib'],
       test_suite       =   'nose.collector',
       tests_require    =   ['nose'],
       scripts          =   ['fetal_plate_segmentation/fetal_plate_segmentation.py'],
