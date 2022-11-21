@@ -1,6 +1,6 @@
 chrisapp
 pudb
-tensorflow==1.5
+tensorflow==2.9.3
 Keras==2.2.4
 nibabel
 matplotlib
